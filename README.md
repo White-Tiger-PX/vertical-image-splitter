@@ -1,65 +1,62 @@
-# Book Cover Splitter
+# Vertical Image Splitter
 
-Разделение любого изображения на две части по вертикальной линии. Пример применения — отделение обложки книги от корешка. Названия частей можно задать самостоятельно.
+**[English](README.md)** · [Русский](README.ru.md) · [Español](README.es.md) · [Deutsch](README.de.md) · [Français](README.fr.md) · [Português (Brasil)](README.pt_BR.md) · [Italiano](README.it.md) · [简体中文](README.zh_CN.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Türkçe](README.tr.md) · [Polski](README.pl.md)
 
-## Запуск
+A lightweight desktop application for splitting any image into **two vertical parts**. Book covers and spines are just one example: you choose the names of both resulting images.
 
-Все файлы программы лежат вместе. На Windows запустите **start.bat**. Нужны Python 3.10+ и Tkinter; при отсутствии Pillow файл установит его через pip.
+![Screenshot of Vertical Image Splitter](interface-illustration.png)
 
-На Linux/macOS:
+## Features
+
+- Pixel-precise split: enter the X coordinate or drag a red line in the preview.
+- Batch workflow: add individual files or an entire folder. Use **Ctrl+click** to select multiple rows and **Save selected** to export only those.
+- Reorder images by dragging rows. Apply the same **relative split position** to the whole batch, then fine-tune each image.
+- Choose the original image format or convert to PNG, TIFF, JPEG, WebP, BMP or GIF.
+- Optional series naming and numbered volumes; otherwise the original filename is used.
+- Originals are never modified. Existing output files are backed up before replacement.
+
+## Install and run
+
+**Windows:** install Python 3.10+ with Tkinter, then double-click `start.bat`. The launcher checks for Pillow and installs it if necessary.
+
+**Linux/macOS:** install Python 3.10+ and Tkinter (on many Linux distributions: `python3-tk`), then run:
 
 ```sh
 python3 -m pip install -r requirements.txt
 python3 cover_splitter.py
 ```
 
-На Linux Tkinter может устанавливаться отдельно пакетом `python3-tk`.
+## How to use
 
-## Использование
+1. Select **File → Add images…** or **Add folder…**.
+2. Choose **File → Output folder…**.
+3. Enter your own labels for the **left** and **right** parts. The initial example names are **Cover** and **Spine**.
+4. Choose the output format: **Same as source** (default), PNG, TIFF, JPEG, WebP, BMP or GIF.
+5. Optionally set a series name and first volume number under **Names**.
+6. Set the split X in actual source-image pixels or drag the red line. Use **±1 px** for fine adjustments.
+7. Select one or more rows using Ctrl (Shift for a range) and click **Save selected**, or use **Recreate all**.
 
-1. **Файл → Добавить изображения…** или **Добавить папку…**.
-2. **Файл → Папка сохранения…**.
-3. Задайте названия **левой** и **правой** частей. По умолчанию: **Обложка** и **Корешок**. Пустое поле использует значение по умолчанию.
-4. Выберите **формат сохранения**: **Как у исходника**, PNG, TIFF, JPEG, WebP, BMP или GIF. По умолчанию выбран исходный формат. В смешанной партии каждый исходник сохраняет свой формат: PNG → PNG, TIFF → TIFF, JPEG → JPEG.
-5. При желании задайте серию через **Названия → Название серии…** и начальный номер. Без серии используется исходное имя файла без расширения.
-6. Введите **X от левого края исходника** или перетащите красную линию. Строки можно перетаскивать мышью, меняя порядок. Разрезы остаются у своих изображений.
-7. **Сохранить выбранное** или **Пересоздать все**.
+## Output files
 
-Для `example.png`, без серии, с настройками по умолчанию:
+For a file named `example.png` without a series, the default settings create:
 
 ```text
-Выбранная папка/
+output/
   example/
-    example - Обложка.png
-    example - Корешок.png
+    example - Cover.png
+    example - Spine.png
 ```
 
-Если вписать «Задняя обложка» и «Правая часть», получатся `example - Задняя обложка.png` и `example - Правая часть.png`.
+With a series name, each source file gets a numbered subfolder, for example `My Series. Vol. 1/`. You can rename **either** part, e.g. “Back cover” and “Spine”.
 
-Необязательная серия сохраняет прежнюю схему: `Название серии. Том 1/Название серии. Том 1 - Обложка.png`.
+## Image handling
 
-Названия частей должны различаться. Недопустимые символы заменяются на `_`; совпадение имён после замены останавливает сохранение.
+Only the preview is scaled; exported parts are cropped at the exact source pixel coordinate. JPEG is saved at quality 100, WebP losslessly, and TIFF with lossless compression. Multi-page TIFF and animated images are processed frame by frame when the chosen format supports it. Changing formats can change color mode, palette, metadata or compression; “Same as source” keeps the file format, not byte-for-byte identical encoding.
 
-## Размеры и форматы
+## Languages and settings
 
-X — реальные пиксели исходника. **Применить долю ко всем** переносит долю ширины: `540/600` → `1080/1200`. Каждый исходник можно подправить отдельно. Разная высота не меняет X.
+The app **starts in English** on first launch, regardless of the operating system language. Select any language from the **Language** menu. Your choice is applied immediately and kept in `settings.json` along with selected files, split positions, names and output preferences. Custom part names are never overwritten when switching languages. No automatic language detection, online translation or extra dependency is used.
 
-Масштабируется только предпросмотр. Левая часть — `[0, X)`, правая — `[X, ширина)`. Столбцы не теряются и не повторяются.
+## Privacy and backups
 
-Поддерживаются JPG/JPEG, PNG, TIFF/TIF, WebP, BMP и GIF. В режиме исходного формата сохраняются в том числе расширения `.jpeg` и `.tif`. Прозрачность PNG, TIFF и WebP сохраняется; для JPEG/BMP прозрачные области заполняются белым. TIFF не переводится принудительно в RGB: сохраняется исходный режим, включая 16-битные изображения.
-
-Многостраничные TIFF и кадры анимации обрабатываются целиком. Для многостраничного/анимированного исходника выходной формат должен поддерживать несколько страниц/кадров: TIFF, PNG, WebP или GIF. При разной ширине страниц программа предложит использовать отдельные исходники.
-
-JPEG кодируется с quality=100 и subsampling=0; WebP сохраняется без потерь, TIFF — со сжатием без потерь. Преобразование между форматами может менять палитру, глубину цвета или доступные свойства. Режим «Как у исходника» сохраняет формат, а не исходные байты файла.
-
-Исходники не изменяются. Перед заменой ранее созданных результатов их копии сохраняются в подпапке **Предыдущие изображения**. Файлы с другими названиями и расширениями остаются на месте.
-
-## Настройки
-
-Только **settings.json рядом со start.bat и cover_splitter.py**. Сохраняются исходники, порядок, разрезы, папка назначения, серия, названия двух частей и формат сохранения. Если файла нет, используются стандартные настройки. Папка программы должна быть доступна для записи.
-
-## Иллюстрация
-
-![Пример разделения изображения на книге](interface-illustration.png)
-
-Иллюстрация предыдущей версии. В текущей доступны названия обеих частей, выбор формата и перетаскивание строк; нижняя панель увеличенного корешка удалена.
+Processing runs locally. No images are uploaded. Source files are never edited; before replacing existing results, the old results are copied to a dated `Previous images/` subfolder. `settings.json` contains local paths and should not be committed (it is included in `.gitignore`). The application directory must be writable.

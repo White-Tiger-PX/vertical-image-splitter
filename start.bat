@@ -12,13 +12,13 @@ if not errorlevel 1 (
   set "BCS_PY=python"
   goto ready
 )
-echo Python 3.10+ не найден. Установи Python с python.org.
+echo Python 3.10+ not found. Install Python from python.org.
 pause
 exit /b 1
 :ready
 "%BCS_PY%" -c "import sys; assert sys.version_info >= (3,10); import tkinter" >nul 2>&1
 if errorlevel 1 (
-  echo Нужен Python 3.10+ с Tkinter.
+  echo Python 3.10+ with Tkinter is required.
   pause
   exit /b 1
 )
@@ -26,7 +26,7 @@ if errorlevel 1 (
 if not errorlevel 1 goto run
 "%BCS_PY%" -m pip install -r "%~dp0requirements.txt"
 if errorlevel 1 (
-  echo Не удалось установить Pillow.
+  echo Could not install Pillow.
   pause
   exit /b 1
 )

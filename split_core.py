@@ -5,10 +5,11 @@ from pathlib import Path
 import re
 import shutil
 from PIL import Image, ImageOps
+from i18n import LocalizedError
 
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tif', '.tiff', '.gif'}
 OUTPUT_FORMATS = {
-    'SOURCE': 'Как у исходника',
+    'SOURCE': 'As source',
     'PNG': 'PNG', 'TIFF': 'TIFF', 'JPEG': 'JPEG',
     'WEBP': 'WebP', 'BMP': 'BMP', 'GIF': 'GIF',
 }
@@ -17,9 +18,9 @@ EXTENSIONS = {'JPEG': '.jpg', 'PNG': '.png', 'TIFF': '.tiff',
 
 def split_pixel(width: int, fraction: float) -> int:
     if width < 2:
-        raise ValueError('Ширина изображения должна быть не меньше двух пикселей')
+        raise LocalizedError('core_width')
     if not 0 < float(fraction) < 1:
-        raise ValueError('Доля ширины должна быть между 0 и 1')
+        raise LocalizedError('core_fraction')
     return max(1, min(width - 1, round(width * float(fraction))))
 
 def load_source(path: Path) -> Image.Image:
@@ -29,7 +30,7 @@ def load_source(path: Path) -> Image.Image:
 def safe_name(value: str) -> str:
     name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', value).strip(' .')
     if not name:
-        raise ValueError('Название файла не должно быть пустым')
+        raise LocalizedError('core_empty_name')
     reserved = {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}
     if name.split('.')[0].upper() in reserved:
         name = '_' + name
@@ -42,22 +43,22 @@ def natural_key(value: str) -> list:
 def settings_path() -> Path:
     return Path(__file__).resolve().parent / 'settings.json'
 
-def part_names(left: str = 'Обложка', right: str = 'Корешок') -> tuple[str, str]:
-    left = safe_name(str(left).strip() or 'Обложка')
-    right = safe_name(str(right).strip() or 'Корешок')
+def part_names(left: str = 'Cover', right: str = 'Spine') -> tuple[str, str]:
+    left = safe_name(str(left).strip() or 'Cover')
+    right = safe_name(str(right).strip() or 'Spine')
     if left.casefold() == right.casefold():
-        raise ValueError('Названия левой и правой частей должны различаться')
+        raise LocalizedError('core_same_labels')
     return left, right
 
 def resolve_format(source: Path, original_format: str, chosen: str) -> tuple[str, str]:
     chosen = chosen.upper()
     if chosen not in OUTPUT_FORMATS:
-        raise ValueError(f'Неизвестный формат сохранения: {chosen}')
+        raise LocalizedError('core_unknown_format', format=chosen)
     target = original_format.upper() if chosen == 'SOURCE' else chosen
     if target == 'MPO':
         target = 'JPEG'
     if target not in EXTENSIONS:
-        raise ValueError(f'Сохранение в исходный формат {target} не поддерживается; выбери другой формат')
+        raise LocalizedError('core_unsupported_format', format=target)
     extension = EXTENSIONS[target]
     if chosen == 'SOURCE' and source.suffix.lower() in IMAGE_EXTENSIONS:
         extension = source.suffix.lower()
@@ -76,8 +77,8 @@ def prepare_frame(image: Image.Image, target: str) -> Image.Image:
     return image
 
 def save_parts(source: Path, output: Path, title: str, fraction: float,
-               stamp: str | None = None, *, left_label: str = 'Обложка',
-               right_label: str = 'Корешок', output_format: str = 'SOURCE') -> tuple[int, int, int]:
+               stamp: str | None = None, *, left_label: str = 'Cover',
+               right_label: str = 'Spine', output_format: str = 'SOURCE') -> tuple[int, int, int]:
     left_label, right_label = part_names(left_label, right_label)
     source = Path(source)
     frames = []
@@ -88,7 +89,7 @@ def save_parts(source: Path, output: Path, title: str, fraction: float,
         loop = original.info.get('loop', 0)
         count = getattr(original, 'n_frames', 1)
         if count > 1 and target not in ('TIFF', 'GIF', 'WEBP', 'PNG'):
-            raise ValueError('В исходнике несколько кадров/страниц. Выбери исходный формат, TIFF, PNG, WebP или GIF')
+            raise LocalizedError('core_multi_frame')
         for index in range(count):
             original.seek(index)
             frame = ImageOps.exif_transpose(original).copy()
@@ -97,7 +98,7 @@ def save_parts(source: Path, output: Path, title: str, fraction: float,
     width, height = frames[0].size
     x = split_pixel(width, fraction)
     if any(frame.width != width for frame in frames):
-        raise ValueError('Страницы имеют разную ширину; раздели их на отдельные исходники')
+        raise LocalizedError('core_var_width')
     title = safe_name(title)
     folder = Path(output) / title
     folder.mkdir(parents=True, exist_ok=True)
@@ -125,7 +126,7 @@ def save_parts(source: Path, output: Path, title: str, fraction: float,
             pieces[0].save(temporary, format=target, **options)
         for _, destination in staged:
             if destination.exists():
-                backup = folder / 'Предыдущие изображения' / stamp / destination.name
+                backup = folder / 'Previous images' / stamp / destination.name
                 backup.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(destination, backup)
         for temporary, destination in staged:
